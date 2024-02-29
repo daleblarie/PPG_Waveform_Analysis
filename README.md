@@ -11,7 +11,6 @@ One version is implemented in base python/numpy/scipy and is able to display plo
 | SI CALCULATION | 17.15	| 10.25 |
 | RI CALCULATION | 15.03 | 10.15 |
 | AI CALCULATION | 15.4	| 10.23 |
-
 | IPA CALCULATION | 33.96 | 21.8 |
 | PI CALCULATION | 8.71 |	0.45 |
 | PVI CALCULATION	| 600.15 | 20.71 |
