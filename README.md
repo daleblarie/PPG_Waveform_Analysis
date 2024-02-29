@@ -1,6 +1,5 @@
 Some common clinically useful metrics extracted from a PPG waveform.
-One version is implemented in base python/numpy/scipy and is able to display plots. The other is setup to run with numba for JIT compliation to increase execution speed.
-
+One version is implemented in base python/numpy/scipy and is able to display plots. The other is setup to run with numba for JIT compliation to increase execution speed. These were speed tested ten times total on a data set of 90, one hour long PPG waveforms sampled at 62.5hz taken from the Mimic 3 waveform database. 
 
 
 ## RAW TIME VALUES (seconds)		
