@@ -1,4 +1,5 @@
 import scipy
+import scipy.signal
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -41,13 +42,17 @@ class PPG_METRICS:
             ax[0].set_title("Pleth Signal")
             ax[0].plot(time, pleth_signal)
             ax[0].set_xlabel('Time')
-            ax[0].scatter([peak/sampling_freq for peak in systolic_peaks], pleth_signal[systolic_peaks], c="r")
+            ax[0].scatter([peak/sampling_freq for peak in potential_diastolic_peaks], pleth_signal[potential_diastolic_peaks], c="g")
             ax[0].scatter([peak/sampling_freq for peak in diastolic_peaks], pleth_signal[diastolic_peaks], c="b")
+            ax[0].scatter([peak/sampling_freq for peak in systolic_peaks], pleth_signal[systolic_peaks], c="r")
             ax[1].set_title("Grad of Pleth signal")
             ax[1].plot(time, np.gradient(pleth_signal))
             ax[1].set_xlabel('Time')
+            ax[1].scatter([peak/sampling_freq for peak in potential_diastolic_peaks], np.gradient(pleth_signal)[potential_diastolic_peaks], c="g")
             ax[1].scatter([peak/sampling_freq for peak in systolic_peaks], np.gradient(pleth_signal)[systolic_peaks], c="r")
-            ax[1].scatter([peak/sampling_freq for peak in diastolic_peaks], np.gradient(pleth_signal)[diastolic_peaks], c="b")
+            ax[1].scatter([peak/sampling_freq for peak in diastolic_peaks], np.gradient(pleth_signal)
+            [diastolic_peaks], c="b")
+
             ax[2].plot(time, SI_array)
             ax[2].set_xlabel("Time")
             ax[2].set_title("Stiffness Index")
@@ -150,14 +155,14 @@ class PPG_METRICS:
         # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7309072/
         # The dicrotic notch is an essential feature of the PPG signal. Figure 8 describes the algorithm to detect the dicrotic notch. To do so, a line was drawn from the systolic peak to the diastolic peak. The minimum of the subtraction of the straight line from the signal is the dicrotic notch. However, to make it more robust, the fix index was used, which calculates the local minima within a given window (in this case 50 ms) around a given point. Reliable detection of the dicrotic notch in various situations is shown in Figure 9.
 
-        dicrotic_notch = []
+        dicrotic_notch = np.zeros(shape=systolic_peaks.shape).astype(np.int32)
         for i in range(systolic_peaks.shape[0]):
             sys_peak, dias_peak = systolic_peaks[i], diastolic_peaks[i]
+            if (sys_peak > dias_peak):
+                sys_peak = systolic_peaks[i-1]
             subtraction_line = np.linspace(pleth_signal[sys_peak], pleth_signal[dias_peak], num=(dias_peak-sys_peak))
             sys_to_dias_window = pleth_signal[sys_peak:dias_peak]
             notch = np.argmin(sys_to_dias_window-subtraction_line) + sys_peak
-
-            dicrotic_notch.append(notch)
 
 
         IPA_array = np.zeros(shape=len(pleth_signal))
@@ -247,7 +252,7 @@ class PPG_METRICS:
             ax.plot(PVI)
             plt.tight_layout()
 
-        return PVI, PI_min, PI_max
+        return PVI
 
     def calculate_PSQI(self, pleth_signal, sampling_freq=62.4725):
         from scipy.signal import butter, lfilter, freqz
@@ -489,7 +494,7 @@ class PPG_METRICS:
 
 if __name__ =="__main__":
     import wfdb
-    ppg_metrics = PPG_METRICS()
+    ppg_metrics = PPG_METRICS(True)
     # hadm id 24239751
     # | subject_id | hadm_id  | stay_id  | caregiver_id | charttime           | storetime           | itemid | value | valuenum | valueuom | warning |
     # |   10079700 | 24239751 | 35381116 |        62802 | 2115-10-11 07:22:00 | 2115-10-11 14:15:00 | 226707 | 74    |       74 | Inch     |       0 |
@@ -504,12 +509,13 @@ if __name__ =="__main__":
     pleth_index = info["sig_name"].index("Pleth")
     test_pleth_signal = signal[:window_size,pleth_index]
     
-    # stiffnes_index = ppg_metrics.calculate_SI(test_pleth_signal, test_height_meters, sampling_freq)
-    # reflection_index = ppg_metrics.calculate_RI(test_pleth_signal)
-    # augmentation_index = ppg_metrics.calculate_AI(test_pleth_signal)
-    # inflection_point_area = ppg_metrics.calculate_IPA(test_pleth_signal)
+    stiffnes_index = ppg_metrics.calculate_SI(test_pleth_signal, test_height_meters, sampling_freq)
+    reflection_index = ppg_metrics.calculate_RI(test_pleth_signal)
+    augmentation_index = ppg_metrics.calculate_AI(test_pleth_signal)
+    inflection_point_area = ppg_metrics.calculate_IPA(test_pleth_signal)
     # prefusion_index = ppg_metrics.calculate_PI(test_pleth_signal)
-    # prefusion_index = ppg_metrics.calculate_PVI(test_pleth_signal)
+    prefusion_index = ppg_metrics.calculate_PVI(test_pleth_signal)
     # power_spectral_density = ppg_metrics.calculate_PSD(test_pleth_signal, sampling_freq)
-    resp_rate = ppg_metrics.calculate_resp_rate(test_pleth_signal, sampling_freq)
+    # resp_rate = ppg_metrics.calculate_resp_rate(test_pleth_signal, sampling_freq)
+    plt.title("PYTHON VERSION")
     plt.show()

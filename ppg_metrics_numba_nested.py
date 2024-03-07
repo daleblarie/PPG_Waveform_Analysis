@@ -23,155 +23,146 @@ spec = [
 
 ]
 
-
-@jit(nopython = True)
-def rest_of_SI_function(pleth_signal, systolic_peaks, potential_diastolic_peaks, patient_height_meters, sampling_freq):
-    SI_array = np.zeros(shape=len(pleth_signal))
-    # getting rid of false peaks from the gradient peaks
-    diastolic_peaks = []
-    dias_index = 0
-    for sys_index in range(len(systolic_peaks)):
-        sys_peak = systolic_peaks[sys_index]
-        while potential_diastolic_peaks[dias_index] < sys_peak + 10 and dias_index < potential_diastolic_peaks.shape[0]-1:
-            dias_index += 1
-        diastolic_peaks.append(potential_diastolic_peaks[dias_index])
-
-    # calculating SI over time with a 0 order hold
-    prev_peak = 0
-    SI_value = 0
-    i=0
-    for i in range(len(systolic_peaks)):
-        SI_array[prev_peak:diastolic_peaks[i]] = SI_value
-        SI_value = patient_height_meters / ((diastolic_peaks[i] - systolic_peaks[i])/sampling_freq)
-        prev_peak = diastolic_peaks[i]
-    SI_array[prev_peak:] = SI_value
-    return SI_array
-
 def calculate_SI(pleth_signal, patient_height_meters=1, sampling_freq=62.4725, PLOTTING=False):
     systolic_peaks = find_peaks(pleth_signal, distance=10, prominence=0.15)[0]
     potential_diastolic_peaks = scipy.signal.find_peaks(np.gradient(pleth_signal), distance=25)[0]
 
+    @jit(nopython = True)
+    def rest_of_function(pleth_signal, systolic_peaks, potential_diastolic_peaks, patient_height_meters, sampling_freq):
+        SI_array = np.zeros(shape=len(pleth_signal))
+        # getting rid of false peaks from the gradient peaks
+        diastolic_peaks = []
+        dias_index = 0
+        for sys_index in range(len(systolic_peaks)):
+            sys_peak = systolic_peaks[sys_index]
+            while potential_diastolic_peaks[dias_index] < sys_peak + 10 and dias_index < potential_diastolic_peaks.shape[0]-1:
+                dias_index += 1
+            diastolic_peaks.append(potential_diastolic_peaks[dias_index])
 
-    return rest_of_SI_function(pleth_signal, systolic_peaks, potential_diastolic_peaks, patient_height_meters, sampling_freq)
+        # calculating SI over time with a 0 order hold
+        prev_peak = 0
+        SI_value = 0
+        i=0
+        for i in range(len(systolic_peaks)):
+            SI_array[prev_peak:diastolic_peaks[i]] = SI_value
+            SI_value = patient_height_meters / ((diastolic_peaks[i] - systolic_peaks[i])/sampling_freq)
+            prev_peak = diastolic_peaks[i]
+        SI_array[prev_peak:] = SI_value
+        return SI_array
 
-
-@jit(nopython = True)
-def rest_of_RI_function(pleth_signal, systolic_peaks, potential_diastolic_peaks):
-    RI_array = np.zeros(shape=len(pleth_signal))
-    # getting rid of false peaks from the gradient peaks
-    diastolic_peaks = []
-    dias_index = 0
-    for sys_index in range(len(systolic_peaks)):
-        sys_peak = systolic_peaks[sys_index]
-        while potential_diastolic_peaks[dias_index] < sys_peak + 10 and dias_index < potential_diastolic_peaks.shape[0]-1:
-            dias_index += 1
-        diastolic_peaks.append(potential_diastolic_peaks[dias_index])
-
-    # calculating RI over time with a 0 order hold
-    prev_peak = 0
-    RI_value = 0
-    i=0
-    for i in range(len(systolic_peaks)):
-        RI_array[prev_peak:diastolic_peaks[i]] = RI_value
-        RI_value = 100 * (pleth_signal[diastolic_peaks[i]] / pleth_signal[systolic_peaks[i]])
-        prev_peak = diastolic_peaks[i]
-    RI_array[prev_peak:] = RI_value
-
-    return RI_array
+    return rest_of_function(pleth_signal, systolic_peaks, potential_diastolic_peaks, patient_height_meters, sampling_freq)
 
 def calculate_RI(pleth_signal, PLOTTING=False):
     systolic_peaks = find_peaks(pleth_signal, distance=10, prominence=0.15)[0]
     potential_diastolic_peaks = scipy.signal.find_peaks(np.gradient(pleth_signal), distance=25)[0]
 
-    
-    return rest_of_RI_function(pleth_signal, systolic_peaks, potential_diastolic_peaks)
+    @jit(nopython = True)
+    def rest_of_function(pleth_signal, systolic_peaks, potential_diastolic_peaks):
+        RI_array = np.zeros(shape=len(pleth_signal))
+        # getting rid of false peaks from the gradient peaks
+        diastolic_peaks = []
+        dias_index = 0
+        for sys_index in range(len(systolic_peaks)):
+            sys_peak = systolic_peaks[sys_index]
+            while potential_diastolic_peaks[dias_index] < sys_peak + 10 and dias_index < potential_diastolic_peaks.shape[0]-1:
+                dias_index += 1
+            diastolic_peaks.append(potential_diastolic_peaks[dias_index])
 
+        # calculating RI over time with a 0 order hold
+        prev_peak = 0
+        RI_value = 0
+        i=0
+        for i in range(len(systolic_peaks)):
+            RI_array[prev_peak:diastolic_peaks[i]] = RI_value
+            RI_value = 100 * (pleth_signal[diastolic_peaks[i]] / pleth_signal[systolic_peaks[i]])
+            prev_peak = diastolic_peaks[i]
+        RI_array[prev_peak:] = RI_value
 
-
-@jit(nopython = True)
-def rest_of__AI_function(pleth_signal, systolic_peaks, potential_diastolic_peaks):
-    AI_array = np.zeros(shape=len(pleth_signal))
-    # getting rid of false peaks from the gradient peaks
-    diastolic_peaks = []
-    dias_index = 0
-    for sys_index in range(len(systolic_peaks)):
-        sys_peak = systolic_peaks[sys_index]
-        while potential_diastolic_peaks[dias_index] < sys_peak + 10 and dias_index < potential_diastolic_peaks.shape[0]-1:
-            dias_index += 1
-        diastolic_peaks.append(potential_diastolic_peaks[dias_index])
-
-    # calculating AI over time with a 0 order hold
-    prev_peak = 0
-    AI_value = 0
-    i=0
-    for i in range(len(systolic_peaks)):
-        AI_array[prev_peak:diastolic_peaks[i]] = AI_value
-        AI_value = 100 * ((pleth_signal[systolic_peaks[i]] - pleth_signal[diastolic_peaks[i]]) / pleth_signal[systolic_peaks[i]])
-        prev_peak = diastolic_peaks[i]
-    AI_array[prev_peak:] = AI_value
-    
-    return AI_array
+        return RI_array
+    return rest_of_function(pleth_signal, systolic_peaks, potential_diastolic_peaks)
 
 def calculate_AI(pleth_signal, PLOTTING=False):
     systolic_peaks = find_peaks(pleth_signal, distance=10, prominence=0.15)[0]
     potential_diastolic_peaks = scipy.signal.find_peaks(np.gradient(pleth_signal), distance=25)[0]
 
+    @jit(nopython = True)
+    def rest_of_function(pleth_signal, systolic_peaks, potential_diastolic_peaks):
+        AI_array = np.zeros(shape=len(pleth_signal))
+        # getting rid of false peaks from the gradient peaks
+        diastolic_peaks = []
+        dias_index = 0
+        for sys_index in range(len(systolic_peaks)):
+            sys_peak = systolic_peaks[sys_index]
+            while potential_diastolic_peaks[dias_index] < sys_peak + 10 and dias_index < potential_diastolic_peaks.shape[0]-1:
+                dias_index += 1
+            diastolic_peaks.append(potential_diastolic_peaks[dias_index])
 
-    return rest_of__AI_function(pleth_signal, systolic_peaks, potential_diastolic_peaks)
-
-
-@jit(nopython = True)
-def rest_of_IPA_function(pleth_signal, systolic_peaks, potential_diastolic_peaks):
-    # getting rid of false peaks from the gradient peaks
-    diastolic_peaks = []
-    dias_index = 0
-    for sys_index in range(len(systolic_peaks)):
-        sys_peak = systolic_peaks[sys_index]
-        while potential_diastolic_peaks[dias_index] < sys_peak + 10 and dias_index < potential_diastolic_peaks.shape[0]-1:
-            dias_index += 1
-        diastolic_peaks.append(potential_diastolic_peaks[dias_index])
-    diastolic_peaks = np.array(diastolic_peaks)
-    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7309072/
-    # The dicrotic notch is an essential feature of the PPG signal. Figure 8 describes the algorithm to detect the dicrotic notch. To do so, a line was drawn from the systolic peak to the diastolic peak. The minimum of the subtraction of the straight line from the signal is the dicrotic notch. However, to make it more robust, the fix index was used, which calculates the local minima within a given window (in this case 50 ms) around a given point. Reliable detection of the dicrotic notch in various situations is shown in Figure 9.
-
-    dicrotic_notch = np.zeros(shape=systolic_peaks.shape).astype(np.int32)
-    for i in range(systolic_peaks.shape[0]):
-        sys_peak, dias_peak = systolic_peaks[i], diastolic_peaks[i]
-        if (sys_peak > dias_peak):
-            sys_peak = systolic_peaks[i-1]
-        subtraction_line = np.linspace(pleth_signal[sys_peak], pleth_signal[dias_peak], num=(dias_peak-sys_peak))
-        sys_to_dias_window = pleth_signal[sys_peak:dias_peak]
-        notch = np.argmin(sys_to_dias_window-subtraction_line) + sys_peak
-
-
-    IPA_array = np.zeros(shape=len(pleth_signal))
-    signal_troughs = np.zeros(shape=systolic_peaks.shape).astype(np.int32)
-    ipa_value = 0
-    prev_trough = -1
-    for i in range(len(dicrotic_notch)-1):
-        sys_peak, notch = systolic_peaks[i], dicrotic_notch[i]
-        trough = np.argmin(pleth_signal[sys_peak:systolic_peaks[i+1]]) + sys_peak
-        IPA_array[prev_trough:trough] = ipa_value
+        # calculating AI over time with a 0 order hold
+        prev_peak = 0
+        AI_value = 0
+        i=0
+        for i in range(len(systolic_peaks)):
+            AI_array[prev_peak:diastolic_peaks[i]] = AI_value
+            AI_value = 100 * ((pleth_signal[systolic_peaks[i]] - pleth_signal[diastolic_peaks[i]]) / pleth_signal[systolic_peaks[i]])
+            prev_peak = diastolic_peaks[i]
+        AI_array[prev_peak:] = AI_value
         
-        A1 = np.sum(pleth_signal[prev_trough:notch])
-        if A1 ==0:
-            ipa_value = -1
-        else:
-            A2 = np.sum(pleth_signal[notch:trough])
-            ipa_value = A2/A1
-
-        prev_trough = trough
-        signal_troughs[i] = trough
-    IPA_array[prev_trough:] = ipa_value
-    
-    return IPA_array
+        return AI_array
+    return rest_of_function(pleth_signal, systolic_peaks, potential_diastolic_peaks)
 
 def calculate_IPA(pleth_signal, PLOTTING=False):
-    systolic_peaks = find_peaks(pleth_signal, distance=10, prominence=0.15)[0]
+    systolic_peaks = scipy.signal.find_peaks(pleth_signal, distance=10, prominence=0.15)[0]
     potential_diastolic_peaks = scipy.signal.find_peaks(np.gradient(pleth_signal), distance=25)[0]
+    IPA_array = np.zeros(shape=len(pleth_signal))
 
+    @jit(nopython = True)
+    def rest_of_function(pleth_signal, systolic_peaks, potential_diastolic_peaks):
+       # getting rid of false peaks from the gradient peaks
+        diastolic_peaks = []
+        dias_index = 0
+        for sys_index in range(len(systolic_peaks)):
+            sys_peak = systolic_peaks[sys_index]
+            while potential_diastolic_peaks[dias_index] < sys_peak + 10 and dias_index < potential_diastolic_peaks.shape[0]-1:
+                dias_index += 1
+            diastolic_peaks.append(potential_diastolic_peaks[dias_index])
+        diastolic_peaks = np.array(diastolic_peaks)
+        # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7309072/
+        # The dicrotic notch is an essential feature of the PPG signal. Figure 8 describes the algorithm to detect the dicrotic notch. To do so, a line was drawn from the systolic peak to the diastolic peak. The minimum of the subtraction of the straight line from the signal is the dicrotic notch. However, to make it more robust, the fix index was used, which calculates the local minima within a given window (in this case 50 ms) around a given point. Reliable detection of the dicrotic notch in various situations is shown in Figure 9.
 
-    return rest_of_IPA_function(pleth_signal, systolic_peaks, potential_diastolic_peaks)
+        dicrotic_notch = np.zeros(shape=systolic_peaks.shape).astype(np.int32)
+        for i in range(systolic_peaks.shape[0]):
+            sys_peak, dias_peak = systolic_peaks[i], diastolic_peaks[i]
+            if (sys_peak > dias_peak):
+                sys_peak = systolic_peaks[i-1]
+            subtraction_line = np.linspace(pleth_signal[sys_peak], pleth_signal[dias_peak], num=(dias_peak-sys_peak))
+            sys_to_dias_window = pleth_signal[sys_peak:dias_peak]
+            notch = np.argmin(sys_to_dias_window-subtraction_line) + sys_peak
+
+            dicrotic_notch[i] = notch
+
+        signal_troughs = np.zeros(shape=systolic_peaks.shape).astype(np.int32)
+        ipa_value = 0
+        prev_trough = -1
+        for i in range(len(dicrotic_notch)-1):
+            sys_peak, notch = systolic_peaks[i], dicrotic_notch[i]
+            trough = np.argmin(pleth_signal[sys_peak:systolic_peaks[i+1]]) + sys_peak
+            IPA_array[prev_trough:trough] = ipa_value
+            
+            A1 = np.sum(pleth_signal[prev_trough:notch])
+            if A1 ==0:
+                ipa_value = -1
+            else:
+                A2 = np.sum(pleth_signal[notch:trough])
+                ipa_value = A2/A1
+
+            prev_trough = trough
+            signal_troughs[i] = trough
+
+        IPA_array[prev_trough:] = ipa_value
+
+        return IPA_array
+
+    return rest_of_function(pleth_signal, systolic_peaks, potential_diastolic_peaks)
 
 
 
@@ -229,15 +220,6 @@ def calculate_PVI(pleth_signal, window=500, step=10, PI_min=None, PI_max=None, P
 
     return PVI
 
-
-
-@jit(nopython = True)
-def rest_of_PSQI_function(pleth_signal, filtered_data):
-    y_max = max(filtered_data)
-    y_min = min(filtered_data)
-    mean = np.mean(pleth_signal)
-    PSQI = ((y_max - y_min) / mean) * 100
-    return PSQI
 def calculate_PSQI(pleth_signal, sampling_freq=62.4725):
     def moving_average(data, n=3):
         window = np.ones(n)/n
@@ -254,8 +236,14 @@ def calculate_PSQI(pleth_signal, sampling_freq=62.4725):
     # either window of 3 samples, or 0.25 seconds
     window_size = np.max([3, int(0.25 * sampling_freq)])
     filtered_data = moving_average(pleth_signal, window_size)
-
-    return rest_of_PSQI_function(pleth_signal, filtered_data)
+    @jit(nopython = True)
+    def rest_of_function(pleth_signal, filtered_data):
+        y_max = max(filtered_data)
+        y_min = min(filtered_data)
+        mean = np.mean(pleth_signal)
+        PSQI = ((y_max - y_min) / mean) * 100
+        return PSQI
+    return rest_of_function(pleth_signal, filtered_data)
 
 @jit(nopython = True)
 def calculate_ESQI(pleth_signal):
@@ -473,3 +461,14 @@ def calculate_entropy(pleth_signal):
 
 if __name__ == "__main__":
     print("boop")
+    import pandas as pd
+    import time
+    num_repeats = 1
+
+    output_df = pd.read_csv("Waveform_Analysis/analysis_speed_test_signals.csv")
+    start = time.time()
+    for i in range(num_repeats):
+        for series_name, series in output_df.items():
+            IPA_value = calculate_IPA(series.to_numpy())
+            # print("Average IPA Value: {:.2f}".format(np.mean(IPA_value)))
+    print("Total time for IPA calculation {} python: {:.2f}".format("Numba nested", time.time() - start))
